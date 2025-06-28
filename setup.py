@@ -8,7 +8,15 @@ pip install -e . --use-pep517
 
 Run the cmd from the root dir, which holds this script
 """
+
 from setuptools import setup, find_packages
+
+# Gracefully handle missing README.md
+try:
+    with open("README.md", encoding="utf-8") as f:
+        long_description = f.read()
+except FileNotFoundError:
+    long_description = ""
 
 setup(
     name='vegetationFLOW_core',
@@ -30,17 +38,17 @@ setup(
     author='Yashna Kumar and Sally Paing',
     author_email='p4p.vegetationflow@gmail.com',
     description='Modular pipeline for vegetation assessment using Remote Sensing, Multispectral Data and Deep Learning',
-    long_description=open('README.md').read(),
+    long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/vegetationFLOW/vegetationFLOW',
     license='MIT',
     classifiers=[
-        'Development Status :: 3 - Alpha',          # The project is in early development
-        'Intended Audience :: Developers',          # Aimed at developers (not general users)
-        'Topic :: Scientific/Engineering :: GIS',   # The project relates to GIS / remote sensing
-        'License :: OSI Approved :: MIT License',   # It's open source and uses the MIT license
-        'Programming Language :: Python :: 3.8',    # Supports Python 3.8
-        'Programming Language :: Python :: 3.9',    # Supports Python 3.9
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
+        'Topic :: Scientific/Engineering :: GIS',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
     ],
     include_package_data=True,
 )
