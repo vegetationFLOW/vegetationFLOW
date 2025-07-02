@@ -1,0 +1,31 @@
+introduction: |
+  This is where your journey begins! 
+  The ROI Data Collection page is your starting point for your analysis. 
+  Here, you'll define the specific areas you want to analyse, 
+  whether it's for vegetation health, fire damage, or anything in between.
+
+instruction_intro: |
+  We have made it relatively simple to collect and manage your regions of interest. 
+  Follow these steps to get started:
+
+step_1:
+  - Look at the interactive map in the center of the page.
+  - To draw a new area, simply click on the drawing tools located on the map.
+  - Click on the map to start drawing your shape. Try to be as close to your interest area
+  - For more precise drawing, zoom in on the map!
+
+step_2:
+  - Once you've drawn a shape, a small text input box will appear asking you to name it. 
+  - Give your region a clear and descriptive name (e.g., "Forest_Area_1", "Burn_Severity_Zone_A", "Healthy_Field_North").
+  - This will help you easily identify your regions later on!
+
+step_3:
+  - Click the "Download GeoJSON" button to save all your drawn regions as a GeoJSON file to your computer. 
+  - This file contains the precise location and names of your areas.
+  - You'll need this file for the next steps in the app, like training your models or downloading specific satellite images!
+
+outro: |
+  That's it! 
+  You're now ready to define your areas of interest and move on to deeper analysis. 
+  If you have any questions, 
+  feel free to explore the other sections of our app or refer to our help documentation.

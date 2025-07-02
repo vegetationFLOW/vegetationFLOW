@@ -23,6 +23,18 @@ services:
     ports:
       - "8000:8000"
 
+  frontend:
+    build:
+      context: ..                   # root folder
+      dockerfile: vegetationFLOW_tool/Dockerfile
+    working_dir: /app/vegetationFLOW_tool/frontend
+    command: streamlit run Dashboard.py --server.port 8555 --server.address 0.0.0.0 --server.runOnSave true
+    depends_on:
+      - backend
+    volumes:
+      - .:/app/vegetationFLOW_tool  # mount your tool folder as volume for live reload
+    ports:
+      - "8555:8555"
 
 
 

@@ -1,2 +1,8 @@
 fastapi
 uvicorn
+celery
+redis
+streamlit
+folium
+streamlit_folium
+pyyaml

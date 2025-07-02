@@ -3,18 +3,26 @@ import vegetationFLOW_core
 import ee
 import os
 import google.auth
+from pydantic import BaseModel
+
+glob_var = 0
 
 app = FastAPI()
 
-@app.get("/veg_v/")
-def get_status():
-    print(vegetationFLOW_core.__version__)
-    try:
-        credentials, _ = google.auth.load_credentials_from_file(
-            os.environ["GOOGLE_APPLICATION_CREDENTIALS"],
-            scopes=["https://www.googleapis.com/auth/earthengine.readonly"]
-        )
-        ee.Initialize(credentials)
-        print("Successfuly")
-    except Exception as e:
-        print(e)
+class DownloadInput(BaseModel):
+    Dataset_Name: str
+    Collection_Type: str
+    Start_Year: int
+    End_Year: int
+    ROI: str
+    Patch_Size: int 
+
+@app.post("/start-download/")
+def start_download(data: DownloadInput):
+    return {"task_id": 2}
+
+@app.get("/download-status/{task_id}")
+def start_download(task_id:str):
+    global glob_var
+    glob_var += 1
+    return {"progress": glob_var}
