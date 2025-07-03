@@ -3,7 +3,7 @@ import os
 import calendar
 from datetime import datetime
 import requests
-from typing import Literal
+from typing import Literal, Optional
 import concurrent.futures
 from vegetationFLOW_core.utils import patch_roi, checkDateRange
 from vegetationFLOW_core.preprocessing import QA_water_mask, QA_cloud_mask
