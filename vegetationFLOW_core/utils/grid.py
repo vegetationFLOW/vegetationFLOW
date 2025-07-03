@@ -1,7 +1,7 @@
 import geopandas as gpd
 from shapely.geometry import box
 import numpy as np
-from typing import Union
+from typing import Union, Optional
 import math
 from pyproj import CRS
 
@@ -9,7 +9,7 @@ def create_grid(
     bounds: Union[np.ndarray, list[float]], 
     cell_size: int, 
     resolution_m: int, 
-    crs: CRS | None
+    crs: Optional[CRS]
 ) -> gpd.GeoDataFrame:
     """
     Create a uniform grid (vector-based) over a specified bounding box.

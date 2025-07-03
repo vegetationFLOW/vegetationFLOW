@@ -1,3 +1,4 @@
+version: "3.9"
 
 services:
 
@@ -5,36 +6,61 @@ services:
     image: redis:7
     ports:
       - "6379:6379"
-    
+
   backend:
     build:
-      context: ..                   # root folder
+      context: ..                             # Root of your repo
       dockerfile: vegetationFLOW_tool/Dockerfile
     working_dir: /app/vegetationFLOW_tool/backend
     command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
     depends_on:
       - redis
     volumes:
-      - .:/app/vegetationFLOW_tool  # mount your tool folder as volume for live reload
+      - ..:/app                                # Mount whole repo
       - ../vegetationFLOW_tool/secrets/earthengine_key.json:/secrets/earthengine_key.json:ro
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/secrets/earthengine_key.json
-      
     ports:
       - "8000:8000"
 
   frontend:
     build:
-      context: ..                   # root folder
+      context: ..
       dockerfile: vegetationFLOW_tool/Dockerfile
     working_dir: /app/vegetationFLOW_tool/frontend
     command: streamlit run Dashboard.py --server.port 8555 --server.address 0.0.0.0 --server.runOnSave true
     depends_on:
       - backend
     volumes:
-      - .:/app/vegetationFLOW_tool  # mount your tool folder as volume for live reload
+      - ..:/app
     ports:
       - "8555:8555"
 
+  download_worker:
+    build:
+      context: ..
+      dockerfile: vegetationFLOW_tool/Dockerfile
+    working_dir: /app/vegetationFLOW_tool/backend
+    command: celery -A worker.celery_app worker --loglevel=info --queues=download
+    depends_on:
+      - redis
+    volumes:
+      - ..:/app
+      - ../vegetationFLOW_tool/secrets/earthengine_key.json:/secrets/earthengine_key.json:ro
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/secrets/earthengine_key.json
+      - PYTHONPATH=/app/vegetationFLOW_tool/backend
 
-
+  train_worker:
+    build:
+      context: ..
+      dockerfile: vegetationFLOW_tool/Dockerfile
+    working_dir: /app/vegetationFLOW_tool/backend
+    command: celery -A worker.celery_app worker --loglevel=info --queues=train
+    depends_on:
+      - redis
+    volumes:
+      - ..:/app
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/secrets/earthengine_key.json
+      - PYTHONPATH=/app/vegetationFLOW_tool/backend

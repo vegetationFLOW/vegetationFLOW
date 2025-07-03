@@ -7,7 +7,7 @@ from streamlit_folium import st_folium
 from datetime import datetime
 from shapely.geometry import shape, GeometryCollection
 
-BACKEND_API = "http://localhost:8000/" # Update the Port Number if changed in docker-compose
+BACKEND_API = "http://backend:8000" # Update the Port Number if changed in docker-compose
 
 st.set_page_config(
     page_title="Download",
@@ -50,6 +50,7 @@ if "task_id" not in st.session_state:
 
 # ----------------------------------- UI Related
 content = load_content()
+st.write("Testing")
 st.markdown("<h1 style='text-align: center;'>Download Data Page</h1>", unsafe_allow_html=True)
 
 collection_type = st.selectbox(
@@ -157,12 +158,14 @@ if not st.session_state["is_downloading"] and st.session_state["downloaded_start
         "Patch_Size" : pixel_size
 
     }
-    response = requests.post(f"{BACKEND_API}/start-download/", json=payload)
+    print(f"{BACKEND_API}/download/start/")
+    response = requests.post(f"{BACKEND_API}/download/start/")
     if response.status_code == 200:
         st.success(f"Task submitted. Task ID: {response.json()['task_id']}")
         task_id = response.json()["task_id"]
         st.session_state.task_id = task_id
         st.session_state["is_downloading"] = True
+        st.rerun()
     else:
         st.error("Failed to submit task")
 
@@ -170,6 +173,12 @@ if not st.session_state["is_downloading"] and st.session_state["downloaded_start
 if st.session_state["is_downloading"] and st.session_state["downloaded_started"]:
     st.success(f"Task submitted. Task ID: {st.session_state['task_id']}")
     # Connect to backend to get progress update on task
-    response = requests.get(f"{BACKEND_API}/download-status/{st.session_state['task_id']}").json()
-    prg_bar = st.progress(response["progress"], "Downloading...")
+    prg_bar = st.empty()
+    while True:
+        response = requests.get(f"{BACKEND_API}/status/{st.session_state['task_id']}").json()
+        prg_bar.progress(response["progress"], f"Downloading... {response['progress']}%")
+        if response["progress"] == 100:
+            st.session_state["is_downloading"] = False
+            st.session_state["downloaded_started"] = False
+            break
 

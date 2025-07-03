@@ -39,9 +39,8 @@ def QA_cloud_mask(image: ee.ImageCollection) -> ee.ImageCollection:
     >>> collection = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR')
     >>> masked = QA_cloud_mask(collection)
     """
-
     qa = image.select('QA_PIXEL')
-    cloud_bit_mask = 1 << 3  # bit 3 = cloud
-    shadow_bit_mask = 1 << 11  # bit 11 = cloud shadow
-    mask = qa.bitwiseAnd(cloud_bit_mask).eq(0).And(qa.bitwiseAnd(shadow_bit_mask).eq(0))
+    cloudBit_mask = 1 << 3  # bit 3 = cloud
+    shawdowBit_mask = 1 << 11  # bit 4 = cloud shadow
+    mask = qa.bitwiseAnd(cloudBit_mask).eq(0).And(qa.bitwiseAnd(shawdowBit_mask).eq(0))
     return image.updateMask(mask)

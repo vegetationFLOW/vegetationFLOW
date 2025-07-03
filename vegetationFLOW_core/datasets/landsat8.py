@@ -63,7 +63,7 @@ class LandsatDownloader:
             roi_gdf:gpd.GeoDataFrame, 
             startDate:str, 
             endDate:str
-    ) -> ee.Image | None:
+    ) -> Optional[ee.Image]:
         """
         Loads a cloud- and water-masked Landsat 8 median composite Image for a given region and time range,
         applying scaling factors to the optical bands.
@@ -143,8 +143,7 @@ class LandsatDownloader:
 
     def downloadURL(
         self, 
-        composite: ee.ImageCollection,
-        img_size:int,   
+        composite: ee.ImageCollection,  
         filepath: str
     ) -> None:
         """
@@ -164,21 +163,19 @@ class LandsatDownloader:
         
         url = composite.getDownloadURL({
             'region': region_JSON,
-            'dimensions': [img_size, img_size],        # Exact tile size (no distortion)
+            'dimensions': [self.img_size, self.img_size],        # Exact tile size (no distortion)
             'crs': 'EPSG:3857',                         # Coordinate Reference System (meters)
             'format': 'GEO_TIFF',
             'filePerBand': False
         })
 
-        try:
-            r = requests.get(url)
-            r.raise_for_status()  # Raises HTTPError if the request returned an unsuccessful status code
+        r = requests.get(url)
+        if r.status_code == 200:
             with open(filepath, 'wb') as f:
                 f.write(r.content)
             print(f"Saved at: {filepath}")
-        except requests.RequestException as e:
-            print(f"Failed to download image at {filepath}. Error: {e}")
-            print(f"URL was: {url}")
+        else:
+            print(f"Failed to download at {filepath}, status: {r.status_code}, URL: {url}")
 
     def downloadMonthlyComposite(
         self, 
@@ -219,7 +216,7 @@ class LandsatDownloader:
 
                 if self.checkTileValidity(tile_image=tile_image, tile_geom_ee=tile_geom_ee):
                     print(f"Downloading Tile {i}...")
-                    filepath = os.path.join(self.datasetDir, f"tile_{i}")
+                    filepath = os.path.join(self.dataset_dir, f"tile_{i}")
                     os.makedirs(filepath, exist_ok=True)
                     self.downloadURL(tile_image, filepath=os.path.join(filepath, filename))  # Pass clipped image only
                 else:
@@ -229,7 +226,8 @@ class LandsatDownloader:
         self, 
         roi_path: str, 
         startYear: int, 
-        endYear: int
+        endYear: int,
+
     ) -> bool:
         """
         Starts the bulk image download process over a specified ROI and date range.
@@ -294,4 +292,13 @@ class LandsatDownloader:
             concurrent.futures.wait(futures)
 
         return True
-    
+
+if __name__ == "__main__":
+    ee.Initialize(project="vegetationflow-p4p")
+    import time
+    startTime = time.time()
+    DATA_DIR = os.path.join(os.getcwd(), "Data", "vegetationDatasets")
+    tester = LandsatDownloader(data_dir=DATA_DIR, dataset_name="Testing Pipeline")
+    ROI_PATH = r"C:\git_repos\p4p_work\Concepts\Downloading\data\Te Papa-Kura-o-Taranaki.geojson"
+    tester.startDownload(ROI_PATH, 2018, 2018)
+    print(f"Download Pipeline Taken for {2018-2018+1} years: {round(time.time() -startTime, 2)}s")
