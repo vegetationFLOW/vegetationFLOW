@@ -41,7 +41,7 @@ services:
       context: ..
       dockerfile: vegetationFLOW_tool/Dockerfile
     working_dir: /app/vegetationFLOW_tool/backend
-    command: celery -A worker.celery_app worker --loglevel=info --queues=download
+    command: python start_worker.py --queue=download 
     depends_on:
       - redis
     volumes:
@@ -49,18 +49,16 @@ services:
       - ../vegetationFLOW_tool/secrets/earthengine_key.json:/secrets/earthengine_key.json:ro
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/secrets/earthengine_key.json
-      - PYTHONPATH=/app/vegetationFLOW_tool/backend
 
   train_worker:
     build:
       context: ..
       dockerfile: vegetationFLOW_tool/Dockerfile
     working_dir: /app/vegetationFLOW_tool/backend
-    command: celery -A worker.celery_app worker --loglevel=info --queues=train
+    command: python start_worker.py --queue=train 
     depends_on:
       - redis
     volumes:
       - ..:/app
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/secrets/earthengine_key.json
-      - PYTHONPATH=/app/vegetationFLOW_tool/backend
