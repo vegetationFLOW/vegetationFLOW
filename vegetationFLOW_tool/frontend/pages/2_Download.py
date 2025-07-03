@@ -50,7 +50,6 @@ if "task_id" not in st.session_state:
 
 # ----------------------------------- UI Related
 content = load_content()
-st.write("Testing")
 st.markdown("<h1 style='text-align: center;'>Download Data Page</h1>", unsafe_allow_html=True)
 
 collection_type = st.selectbox(
@@ -112,8 +111,9 @@ with leftcol:
 with rightcol:
     m = folium.Map(location=[-37, 175], zoom_start=8)
     if roi_file:
+        roi_content = roi_file.read().decode("utf-8")
         try:
-            geojson_data = json.load(roi_file)
+            geojson_data = json.loads(roi_content)
             folium.GeoJson(geojson_data, name="Uploaded ROI").add_to(m)
 
             # Get bounds from all features
@@ -148,7 +148,6 @@ if download_btn:
 # If button pressed but API call not made
 if not st.session_state["is_downloading"] and st.session_state["downloaded_started"]:
     # Backend Logic
-    roi_content = roi_file.read().decode("utf-8")
     payload = {
         "Dataset_Name" : datasetName,
         "Collection_Type" : data_opt,
@@ -156,10 +155,8 @@ if not st.session_state["is_downloading"] and st.session_state["downloaded_start
         "End_Year" : end_date.year,
         "ROI" :  roi_content,
         "Patch_Size" : pixel_size
-
     }
-    print(f"{BACKEND_API}/download/start/")
-    response = requests.post(f"{BACKEND_API}/download/start/")
+    response = requests.post(f"{BACKEND_API}/download/start/", json=payload)
     if response.status_code == 200:
         st.success(f"Task submitted. Task ID: {response.json()['task_id']}")
         task_id = response.json()["task_id"]
@@ -173,12 +170,14 @@ if not st.session_state["is_downloading"] and st.session_state["downloaded_start
 if st.session_state["is_downloading"] and st.session_state["downloaded_started"]:
     st.success(f"Task submitted. Task ID: {st.session_state['task_id']}")
     # Connect to backend to get progress update on task
-    prg_bar = st.empty()
-    while True:
-        response = requests.get(f"{BACKEND_API}/status/{st.session_state['task_id']}").json()
-        prg_bar.progress(response["progress"], f"Downloading... {response['progress']}%")
-        if response["progress"] == 100:
-            st.session_state["is_downloading"] = False
-            st.session_state["downloaded_started"] = False
-            break
+    task_id = st.session_state["task_id"]
+    res = requests.get(f"{BACKEND_API}/task-status/{task_id}").json()
+    st.write(res)
+
+    if res["status"] == "SUCCESS":
+        st.success(res["result"])
+        st.session_state.task_running = False
+        del st.session_state["task_id"]
+    else:
+        st.info("Task still running...")
 

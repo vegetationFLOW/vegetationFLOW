@@ -5,7 +5,7 @@ from datetime import datetime
 import requests
 from typing import Literal, Optional
 import concurrent.futures
-from vegetationFLOW_core.utils import patch_roi, checkDateRange
+from vegetationFLOW_core.utils import patch_roi, checkDateRange, Log
 from vegetationFLOW_core.preprocessing import QA_water_mask, QA_cloud_mask
 
 import ee
@@ -53,8 +53,9 @@ class LandsatDownloader:
         self.dataset_dir = os.path.join(data_dir, dataset_name)
         self.res_m = res_m
         self.img_size = img_size
+        self.log = Log(logger_name="Downloader", log_dir=data_dir, task_id=f"downloading_{dataset_name}")
 
-         # Ensure directories exists
+        # Ensure directories exists
         os.makedirs(name=data_dir, exist_ok=True)
         os.makedirs(name=self.dataset_dir, exist_ok=True)
     
@@ -92,6 +93,7 @@ class LandsatDownloader:
                     .map(QA_water_mask)
                     )
         if collection.size().getInfo() == 0:
+            self.log.addWarning("No images found for this region and date.")
             print("No images found for this region and date.")
             return None
         median_composite = collection.median()
@@ -174,8 +176,10 @@ class LandsatDownloader:
             with open(filepath, 'wb') as f:
                 f.write(r.content)
             print(f"Saved at: {filepath}")
+            self.log.addInfo(f"Saved at: {filepath}")
         else:
-            print(f"Failed to download at {filepath}, status: {r.status_code}, URL: {url}")
+            print(f"Failed to download at {filepath}, status: {r.status_code}")
+            self.log.addWarning(f"Failed to download at {filepath}, status: {r.status_code}")
 
     def downloadMonthlyComposite(
         self, 
@@ -216,11 +220,13 @@ class LandsatDownloader:
 
                 if self.checkTileValidity(tile_image=tile_image, tile_geom_ee=tile_geom_ee):
                     print(f"Downloading Tile {i}...")
+                    self.log.addInfo(f"Downloading Tile {i}...")
                     filepath = os.path.join(self.dataset_dir, f"tile_{i}")
                     os.makedirs(filepath, exist_ok=True)
                     self.downloadURL(tile_image, filepath=os.path.join(filepath, filename))  # Pass clipped image only
                 else:
                     print(f"Skipped Tile {i}: Most pixels masked or invalid")
+                    self.log.addInfo(f"Skipped Tile {i}: Most pixels masked or invalid")
 
     def startDownload(
         self, 
@@ -264,6 +270,7 @@ class LandsatDownloader:
             checkDateRange(startYear, endYear)
         except Exception as e:
             print(f"Error Downloading...\n{e}")
+            self.log.addError(f"Error Downloading...\n{e}")
             return False
 
         years = list(range(startYear, endYear + 1))
@@ -290,6 +297,8 @@ class LandsatDownloader:
 
             # Wait for all tasks to complete
             concurrent.futures.wait(futures)
+        
+        self.log.addInfo("Finished Downloading")
 
         return True
 
@@ -297,7 +306,7 @@ if __name__ == "__main__":
     ee.Initialize(project="vegetationflow-p4p")
     import time
     startTime = time.time()
-    DATA_DIR = os.path.join(os.getcwd(), "Data", "vegetationDatasets")
+    DATA_DIR = os.path.join(os.getcwd(), "Data")
     tester = LandsatDownloader(data_dir=DATA_DIR, dataset_name="Testing Pipeline")
     ROI_PATH = r"C:\git_repos\p4p_work\Concepts\Downloading\data\Te Papa-Kura-o-Taranaki.geojson"
     tester.startDownload(ROI_PATH, 2018, 2018)
